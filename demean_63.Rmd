@@ -1,0 +1,222 @@
+---
+title: "Demean_63"
+author: "Thania Balducci"
+date: "28/7/2020"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: false
+        smooth_scroll: true
+    number_sections: true
+---
+
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=100)
+
+
+packages <- c("lsr","coin","car", "stats")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())), repos='http://cran.us.r-project.org')  
+}
+
+library("car")
+library("lsr")
+library("data.table")
+library("lfe")
+library("Jmisc")
+
+
+library(knitr)
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=100), fig.align='center', message=F, warning=T, fig.width=6, fig.height=6, dev='svg',eval=T)
+```
+
+#Importing the data
+
+```{r}
+DMdemo_63 <- readRDS("C:/Users/baldu/Documents/demo_63.rds")
+
+Cl_DMdemo_63 <- DMdemo_63
+
+Cl_DMdemo_63_fm <- droplevels(Cl_DMdemo_63[Cl_DMdemo_63$gp == 0,])
+Cl_DMdemo_63_hc <- droplevels(Cl_DMdemo_63[Cl_DMdemo_63$gp == 1,])
+```
+
+#Visualize outliers
+
+```{r}
+
+#age
+boxplot(Cl_DMdemo_63$X1_age ~ Cl_DMdemo_63_fm$gp)
+
+#education
+boxplot(Cl_DMdemo_63$X1_yr_study ~ Cl_DMdemo_63_fm$gp)
+```
+
+#Extract outliers
+
+```{r}
+
+#education
+OL_DMyr_study_63_fm <- boxplot(Cl_DMdemo_63_fm$X1_yr_study ~ Cl_DMdemo_63_fm$gp, plot = FALSE)$out
+OL_DMyr_study_63_hc <- boxplot(Cl_DMdemo_63_hc$X1_yr_study ~ Cl_DMdemo_63_hc$gp, plot = FALSE)$out
+
+#tas - eos
+(OL_taseot_63 <- boxplot(Cl_tas_63$X11_eot, plot = FALSE)$out) #TAS eot: 38, 39, 37
+(which(Cl_tas_63$X11_eot == 38)) #index 3
+(which(Cl_tas_63$X11_eot == 39)) #index 7
+(which(Cl_tas_63$X11_eot == 37)) #index 13
+Cl_tas_63$ï..rid[c(3,7,13)] #rid
+```
+
+#Identify outliers
+
+```{r}
+
+#education
+Cl_DMdemo_63_hc$X1_yr_study[Cl_DMdemo_63_hc$X1_yr_study %in% OL_DMyr_study_63_hc] <- NA
+
+Cl_tas_63$X11_eot[Cl_tas_63$X11_eot %in% OL_taseot_63] <- NA
+```
+
+#Demean by group
+
+```{r}
+
+#age
+DMage_63_fm <- demeanlist(Cl_DMdemo_63_fm$X1_age, list(Cl_DMdemo_63_hc$gp), na.rm = TRUE)
+DMage_63_hc <- demeanlist(Cl_DMdemo_63_hc$X1_age, list(Cl_DMdemo_63_hc$gp), na.rm = TRUE)
+
+#education
+DMyr_study_63_fm <- demeanlist(Cl_DMdemo_63_fm$X1_yr_study, list(Cl_DMdemo_63_hc$gp), na.rm = TRUE)
+
+DMyr_study_63_hc <- demeanlist(Cl_DMdemo_63_hc$X1_yr_study, list(Cl_DMdemo_63_hc$gp), na.rm = TRUE)
+DMyr_studyNA_63_hc <- c(NA,NA,DMage_63[1:21], NA, DMage_63[22:28]) #Add outliers (index 1,2,24)
+
+```
+
+#Demean all (one group) ordered by rid
+
+                           demeaned
+age             x              done
+education       yes            done 
+yrs dx          yes
+yrs symptoms    yes
+no daily med    x
+fiq             yes
+wpi             x              done
+sss             x              done
+tender points   x              done
+hamd_total      x              done
+hamd_III        x              done
+hama_total      x              done
+ERQ-S           x              done
+ERQ-R           x              done
+TAS-ID feelings x              done
+TAS-describing  x              done
+TAS-external    yes            done
+TAS total       yes            done
+PANAS-p-lw      yes            done
+PANAS-p-g       x              done
+PANAS-n-lw      x              done
+PANAS-n-g       x              done
+McGill-a        x
+McGill-ts       x
+ipo-id diffusionx              done    
+ipo-childish    yes            done
+ipo-paranoid    x              done
+ipo-pathologicORx              done
+perf_o          yes
+perf_i          yes
+perf_d          yes
+perf_s          yes
+perf_mean       x              done
+
+When multiple groups of subjects are involved, centering becomes more complicated. Sometimes overall centering makes sense. However, in contrast to the popular misconception in the field, under some circumstances within-group centering can be meaningful (and even crucial) and may avoid the following problems with overall or grand-mean centering:
+loss of the integrity of group comparisons;
+multi-collinearity;
+invalid extrapolation of linearity.
+
+https://sscc.nimh.nih.gov/pub/dist/doc/htmldoc/STATISTICS/center.html
+
+```{r}
+
+#age 
+
+DMage63_all_fm <- demeanlist(Cl_demo_63$X1_age, na.rm = TRUE)
+
+#education
+DMyr_study_63 <- demeanlist(Cl_demo_63$X1_yr_study, list(Cl_demo_63$DMfx), na.rm = TRUE)
+DMyr_studyNA_63 <- c(NA, DMyr_study_63[1:2], NA, DMyr_study_63[3:7], NA, DMyr_study_63[8:52], NA, DMyr_study_63[53:59]) #Add outliers (index 1,4,10,56)
+
+
+
+#wpi
+DMwpi_63 <- demean(Cl_ara10_63$X3_wpi_sc)
+
+#sss
+DMsss_63 <- demean(Cl_ara10_63$X3_sss_ts)
+
+#tender points
+DMtp_63 <- demean(Cl_ara90_63$X4_tc)
+
+#hamd_total 
+DMhamd_t_63 <- demean(Cl_ham_63$X6_hamd_total)
+
+#hamd_III       
+DMhamd_III_63 <- demean(Cl_ham_63$X6_hamd_III)
+
+#hama_total    
+DMhama_63 <- demean(Cl_ham_63$X7_hama_total)
+
+#ERQ-S    
+DMerq_s_63 <- demean((Cl_erq_63$X10_S))
+
+#ERQ-R          
+DMerq_r_63 <- demean((Cl_erq_63$X10_R))
+
+#TAS-ID feelings 
+DMtas_ID_63 <- demean(Cl_tas_63$X11_id)
+
+#TAS-describing  
+DMtas_df_63 <- demean(Cl_tas_63$X11_df)
+
+#TAS-external
+DMtas_eot_63 <- demeanlist(as.numeric(Cl_tas_63$X11_eot), list(Cl_demo_63$DMfx), na.rm = TRUE)
+DMtas_eotNA_63 <- c(DMtas_eot_63[1:2], NA, DMtas_eot_63[3:5], NA, DMtas_eot_63[6:10], NA, DMtas_eot_63[11:60]) #Add outliers (index 3,7,13)
+
+#tas total
+DMtas_ts_63 <- demeanlist((Cl_tas_63$X11_ts), list(Cl_demo_63$DMfx), na.rm = TRUE)
+DMtas_tsNA_63 <- c(NA, DMtas_ts_63[1:5], NA, DMtas_ts_63[6:10], NA, DMtas_ts_63[11:60]) #Add outliers (index 1,7,13)
+
+#panas - positive last week
+DMpanas_plw_63 <- demeanlist((Cl_panas_63$X13_p_lw), list(Cl_demo_63$DMfx), na.rm = TRUE)
+
+#panas - positive general
+DMpanas_pg_63 <- demean(Cl_panas_63$X13_p_g)
+
+#panas - negative last week
+DMpanas_nlw_63 <- demean(Cl_panas_63$X13_n_lw)
+
+#panas - negative general
+DMpanas_ng_63 <- demean(Cl_panas_63$X13_n_g)
+
+#ipo - identity difussion
+DMipo_id_63 <- demean(Cl_ipo_63$X9_ID_PC)
+
+#ipo - childish
+DMipo_ori_63 <- demeanlist((Cl_ipo_63$X9_ORI_PC), list(Cl_demo_63$DMfx), na.rm = TRUE)
+DMipo_oriNA_63 <- c(DMipo_ori_63[1:4],NA,DMipo_ori_63[5:62]) #Add outliers (index 5)
+
+#ipo - paranoid
+DMipo_ORP_63 <- demean(Cl_ipo_63$X9_ORP_PC)
+
+#ipo - pathologic object relationships
+DMipo_ORP_63 <- demean(Cl_ipo_63$X9_POR_PC)
+
+#task perf mean
+DMtask_perfmean_63 <- demean(Cl_task_63$p_mean)
+```

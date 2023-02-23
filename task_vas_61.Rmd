@@ -1,0 +1,382 @@
+---
+title: "task_vas_61"
+author: "Thania Balducci"
+date: "07/07/2021"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: true
+        smooth_scroll: true
+    number_sections: true
+---
+
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=100)
+
+
+packages <- c("lsr","coin","car", "stats")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())), repos='http://cran.us.r-project.org')  
+}
+
+library("car")
+library("doBy")
+library("ggplot2")
+library("RColorBrewer")
+
+library(knitr)
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=100), fig.align='center', message=F, warning=T, fig.width=6, fig.height=6, dev='svg',eval=T)
+```
+
+# Importing the data
+
+```{r import}
+vas_61 <- read.csv2("G:/bases/vas_61.csv")
+
+vas_61_fm <- droplevels(vas_61[vas_61$gp == "Fibromyalgia",])
+vas_61_hc <- droplevels(vas_61[vas_61$gp == "Control",])
+
+str(vas_61)
+```
+
+# Pain per block
+```{r}
+#descriptive
+summaryBy(vas_pain ~ block, data=vas_61_fm, FUN=c(mean, sd))
+summaryBy(vas_pain ~ block, data=vas_61_hc, FUN=c(mean, sd))
+summaryBy(vas_pain ~ block, data=vas_61_fm, FUN=c(median, range))
+summaryBy(vas_pain ~ block, data=vas_61_hc, FUN=c(median, range))
+
+#homoscedasticity
+leveneTest(vas_61_fm$vas_pain ~ as.factor(block), data = vas_61_fm)
+leveneTest(vas_61_hc$vas_pain ~ as.factor(block), data = vas_61_hc)
+
+#Normality
+shapiro.test(vas_61_fm$vas_pain)
+shapiro.test(vas_61_hc$vas_pain)
+
+#visualization
+boxplot(vas_pain ~ block, data = vas_61_fm)
+boxplot(vas_pain ~ block, data = vas_61_hc)
+
+#statistic test
+kruskal.test(vas_pain ~ block, data = vas_61_fm)
+pairwise.wilcox.test(vas_61_fm$vas_pain, vas_61_fm$block, p.adjust.method = "BH")
+pairwise.wilcox.test(vas_61_fm$vas_pain, vas_61_fm$block, p.adjust.method = "BH", paired = T)
+
+kruskal.test(vas_pain ~ block, data = vas_61_hc)
+```
+
+# Arousal per block
+```{r}
+#descriptive
+summaryBy(vas_ar ~ block, data=vas_61_fm, FUN=c(mean, sd))
+summaryBy(vas_ar ~ block, data=vas_61_hc, FUN=c(mean, sd))
+summaryBy(vas_ar ~ block, data=vas_61_fm, FUN=c(median, range))
+summaryBy(vas_ar ~ block, data=vas_61_hc, FUN=c(median, range))
+
+#homoscedasticity
+leveneTest(vas_61_fm$vas_ar ~ as.factor(block), data = vas_61_fm)
+leveneTest(vas_61_hc$vas_ar ~ as.factor(block), data = vas_61_hc)
+
+#Normality
+shapiro.test(vas_61_fm$vas_ar)
+shapiro.test(vas_61_hc$vas_ar)
+
+#visualization
+boxplot(vas_ar ~ block, data = vas_61_fm)
+boxplot(vas_ar ~ block, data = vas_61_hc)
+
+#statistic test
+kruskal.test(vas_ar ~ block, data = vas_61_fm)
+pairwise.wilcox.test(vas_61_fm$vas_ar, vas_61_fm$block, p.adjust.method = "BH")
+pairwise.wilcox.test(vas_61_fm$vas_ar, vas_61_fm$block, p.adjust.method = "BH", paired = T)
+
+kruskal.test(vas_ar ~ block, data = vas_61_hc)
+```
+
+# Intensity per block
+```{r}
+#descriptive
+summaryBy(vas_int ~ block, data=vas_61_fm, FUN=c(mean, sd))
+summaryBy(vas_int ~ block, data=vas_61_hc, FUN=c(mean, sd))
+summaryBy(vas_int ~ block, data=vas_61_fm, FUN=c(median, range))
+summaryBy(vas_int ~ block, data=vas_61_hc, FUN=c(median, range))
+
+#homoscedasticity
+leveneTest(vas_61_fm$vas_int ~ as.factor(block), data = vas_61_fm)
+leveneTest(vas_61_hc$vas_int ~ as.factor(block), data = vas_61_hc)
+
+#Normality
+shapiro.test(vas_61_fm$vas_int)
+shapiro.test(vas_61_hc$vas_int)
+
+#visualization
+boxplot(vas_int ~ block, data = vas_61_fm)
+boxplot(vas_int ~ block, data = vas_61_hc)
+
+#statistic test
+kruskal.test(vas_int ~ block, data = vas_61_fm)
+kruskal.test(vas_int ~ block, data = vas_61_hc)
+```
+
+# Pain per condition
+```{r}
+#descriptive
+summaryBy(vas_pain ~ cond, data=vas_61_fm, FUN=c(mean, sd))
+summaryBy(vas_pain ~ cond, data=vas_61_hc, FUN=c(mean, sd))
+summaryBy(vas_pain ~ cond, data=vas_61_fm, FUN=c(median, range))
+summaryBy(vas_pain ~ cond, data=vas_61_hc, FUN=c(median, range))
+
+#visualization
+boxplot(vas_pain ~ cond, data = vas_61_fm)
+boxplot(vas_pain ~ cond, data = vas_61_hc)
+
+#homoscedasticity
+leveneTest(vas_61_fm$vas_pain ~ as.factor(cond), data = vas_61_fm)
+leveneTest(vas_61_hc$vas_pain ~ as.factor(cond), data = vas_61_hc)
+
+#Normality
+shapiro.test(vas_61_fm$vas_pain[vas_61_fm$cond == "Attend neutral"])
+shapiro.test(vas_61_fm$vas_pain[vas_61_fm$cond == "Attend negative"])
+shapiro.test(vas_61_fm$vas_pain[vas_61_fm$cond == "Reduce negative"])
+shapiro.test(vas_61_fm$vas_pain[vas_61_fm$cond == "Suppress negative"])
+shapiro.test(vas_61_fm$vas_pain[vas_61_fm$cond == "Attend positive"])
+shapiro.test(vas_61_fm$vas_pain[vas_61_fm$cond == "Increase positive"])
+shapiro.test(vas_61_fm$vas_pain[vas_61_fm$cond == "Suppress positive"])
+
+shapiro.test(vas_61_hc$vas_pain[vas_61_hc$cond == "Attend neutral"])
+shapiro.test(vas_61_hc$vas_pain[vas_61_hc$cond == "Attend negative"])
+shapiro.test(vas_61_hc$vas_pain[vas_61_hc$cond == "Reduce negative"])
+shapiro.test(vas_61_hc$vas_pain[vas_61_hc$cond == "Suppress negative"])
+shapiro.test(vas_61_hc$vas_pain[vas_61_hc$cond == "Attend positive"])
+shapiro.test(vas_61_hc$vas_pain[vas_61_hc$cond == "Increase positive"])
+shapiro.test(vas_61_hc$vas_pain[vas_61_hc$cond == "Suppress positive"])
+
+#statistic test
+kruskal.test(vas_pain ~ cond, data = vas_61_fm)
+pairwise.wilcox.test(vas_61_fm$vas_pain, vas_61_fm$cond, p.adjust.method = "BH")
+pairwise.wilcox.test(vas_61_fm$vas_pain, vas_61_fm$cond, p.adjust.method = "BH", paired = T)
+
+kruskal.test(vas_pain ~ cond, data = vas_61_hc)
+```
+
+# Arousal per condition
+```{r}
+#descriptive
+summaryBy(vas_ar ~ cond, data=vas_61_fm, FUN=c(mean, sd))
+summaryBy(vas_ar ~ cond, data=vas_61_hc, FUN=c(mean, sd))
+summaryBy(vas_ar ~ cond, data=vas_61_fm, FUN=c(median, range))
+summaryBy(vas_ar ~ cond, data=vas_61_hc, FUN=c(median, range))
+
+#visualization
+boxplot(vas_ar ~ cond, data = vas_61_fm)
+boxplot(vas_ar ~ cond, data = vas_61_hc)
+
+#homoscedasticity
+leveneTest(vas_61_fm$vas_ar ~ as.factor(cond), data = vas_61_fm)
+leveneTest(vas_61_hc$vas_ar ~ as.factor(cond), data = vas_61_hc)
+
+#Normality
+shapiro.test(vas_61_fm$vas_ar[vas_61_fm$cond == "Attend neutral"])
+shapiro.test(vas_61_fm$vas_ar[vas_61_fm$cond == "Attend negative"])
+shapiro.test(vas_61_fm$vas_ar[vas_61_fm$cond == "Reduce negative"])
+shapiro.test(vas_61_fm$vas_ar[vas_61_fm$cond == "Suppress negative"])
+shapiro.test(vas_61_fm$vas_ar[vas_61_fm$cond == "Attend positive"])
+shapiro.test(vas_61_fm$vas_ar[vas_61_fm$cond == "Increase positive"])
+shapiro.test(vas_61_fm$vas_ar[vas_61_fm$cond == "Suppress positive"])
+
+shapiro.test(vas_61_hc$vas_ar[vas_61_hc$cond == "Attend neutral"])
+shapiro.test(vas_61_hc$vas_ar[vas_61_hc$cond == "Attend negative"])
+shapiro.test(vas_61_hc$vas_ar[vas_61_hc$cond == "Reduce negative"])
+shapiro.test(vas_61_hc$vas_ar[vas_61_hc$cond == "Suppress negative"])
+shapiro.test(vas_61_hc$vas_ar[vas_61_hc$cond == "Attend positive"])
+shapiro.test(vas_61_hc$vas_ar[vas_61_hc$cond == "Increase positive"])
+shapiro.test(vas_61_hc$vas_ar[vas_61_hc$cond == "Suppress positive"])
+
+#statistic test
+kruskal.test(vas_ar ~ cond, data = vas_61_fm)
+pairwise.wilcox.test(vas_61_fm$vas_ar, vas_61_fm$cond, p.adjust.method = "BH")
+pairwise.wilcox.test(vas_61_fm$vas_ar, vas_61_fm$cond, p.adjust.method = "BH", paired = T)
+
+kruskal.test(vas_ar ~ cond, data = vas_61_hc)
+```
+
+# Intensity per condition
+```{r}
+#descriptive
+summaryBy(vas_int ~ cond, data=vas_61_fm, FUN=c(mean, sd))
+summaryBy(vas_int ~ cond, data=vas_61_hc, FUN=c(mean, sd))
+summaryBy(vas_int ~ cond, data=vas_61_fm, FUN=c(median, range))
+summaryBy(vas_int ~ cond, data=vas_61_hc, FUN=c(median, range))
+
+#visualization
+boxplot(vas_int ~ cond, data = vas_61_fm)
+boxplot(vas_int ~ cond, data = vas_61_hc)
+
+#homoscedasticity
+leveneTest(vas_61_fm$vas_int ~ as.factor(cond), data = vas_61_fm)
+leveneTest(vas_61_hc$vas_int ~ as.factor(cond), data = vas_61_hc)
+
+#Normality
+shapiro.test(vas_61_fm$vas_int[vas_61_fm$cond == "Attend neutral"])
+shapiro.test(vas_61_fm$vas_int[vas_61_fm$cond == "Attend negative"])
+shapiro.test(vas_61_fm$vas_int[vas_61_fm$cond == "Reduce negative"])
+shapiro.test(vas_61_fm$vas_int[vas_61_fm$cond == "Suppress negative"])
+shapiro.test(vas_61_fm$vas_int[vas_61_fm$cond == "Attend positive"])
+shapiro.test(vas_61_fm$vas_int[vas_61_fm$cond == "Increase positive"])
+shapiro.test(vas_61_fm$vas_int[vas_61_fm$cond == "Suppress positive"])
+
+shapiro.test(vas_61_hc$vas_int[vas_61_hc$cond == "Attend neutral"])
+shapiro.test(vas_61_hc$vas_int[vas_61_hc$cond == "Attend negative"])
+shapiro.test(vas_61_hc$vas_int[vas_61_hc$cond == "Reduce negative"])
+shapiro.test(vas_61_hc$vas_int[vas_61_hc$cond == "Suppress negative"])
+shapiro.test(vas_61_hc$vas_int[vas_61_hc$cond == "Attend positive"])
+shapiro.test(vas_61_hc$vas_int[vas_61_hc$cond == "Increase positive"])
+shapiro.test(vas_61_hc$vas_int[vas_61_hc$cond == "Suppress positive"])
+
+#statistic test
+kruskal.test(vas_int ~ cond, data = vas_61_fm)
+pairwise.wilcox.test(vas_61_fm$vas_int, vas_61_fm$cond, p.adjust.method = "BH")
+pairwise.wilcox.test(vas_61_fm$vas_int, vas_61_fm$cond, p.adjust.method = "BH", paired = T)
+
+kruskal.test(vas_int ~ cond, data = vas_61_hc)
+pairwise.wilcox.test(vas_61_hc$vas_int, vas_61_hc$cond, p.adjust.method = "BH")
+pairwise.wilcox.test(vas_61_hc$vas_int, vas_61_hc$cond, p.adjust.method = "BH", paired = T)
+```
+
+#Intergroup
+
+```{r}
+vas_aneu <- vas_61[vas_61$cond == "Attend neutral", ]
+vas_aneg <- vas_61[vas_61$cond == "Attend negative", ]
+vas_apos <- vas_61[vas_61$cond == "Attend positive", ]
+vas_rneg <- vas_61[vas_61$cond == "Reduce negative", ]
+vas_ipos <- vas_61[vas_61$cond == "Increase positive", ]
+vas_sneg <- vas_61[vas_61$cond == "Suppress negative", ]
+vas_spos <- vas_61[vas_61$cond == "Suppress positive", ]
+
+wilcox.test(vas_aneu$vas_int ~ vas_aneu$gp)
+wilcox.test(vas_aneu$vas_ar ~ vas_aneu$gp)
+wilcox.test(vas_aneu$vas_pain ~ vas_aneu$gp) #s
+
+wilcox.test(vas_aneg$vas_int ~ vas_aneg$gp)
+wilcox.test(vas_aneg$vas_ar ~ vas_aneg$gp)
+wilcox.test(vas_aneg$vas_pain ~ vas_aneg$gp)
+
+
+wilcox.test(vas_apos$vas_int ~ vas_apos$gp)
+wilcox.test(vas_apos$vas_ar ~ vas_apos$gp)
+wilcox.test(vas_apos$vas_pain ~ vas_apos$gp)
+
+
+wilcox.test(vas_rneg$vas_int ~ vas_rneg$gp)
+wilcox.test(vas_rneg$vas_ar ~ vas_rneg$gp)
+wilcox.test(vas_rneg$vas_pain ~ vas_rneg$gp)
+
+
+wilcox.test(vas_ipos$vas_int ~ vas_ipos$gp)
+wilcox.test(vas_ipos$vas_ar ~ vas_ipos$gp)
+wilcox.test(vas_ipos$vas_pain ~ vas_ipos$gp)
+
+wilcox.test(vas_sneg$vas_int ~ vas_sneg$gp)
+wilcox.test(vas_sneg$vas_ar ~ vas_sneg$gp)
+wilcox.test(vas_sneg$vas_pain ~ vas_sneg$gp)
+
+
+wilcox.test(vas_spos$vas_int ~ vas_spos$gp)
+wilcox.test(vas_spos$vas_ar ~ vas_spos$gp)
+wilcox.test(vas_spos$vas_pain ~ vas_spos$gp)
+
+p.adjust(c(0.9,0.4,2e-16,6e-05,2e-05,2e-16,0.1,0.1,2e-16,3e-06,0.01,2e-16,0.4,0.002,2e-16,7e-07,0.003,2e-16,0.5,0.01,2e-16), method="BH")
+
+```
+
+
+#Plots
+```{r}
+#fm intensity
+vas_61_fm$cond <- factor(vas_61_fm$cond, levels = c("Attend neutral",    "Attend positive", "Increase positive", "Suppress positive","Attend negative",   "Reduce negative","Suppress negative"))
+
+ggplot(vas_61_fm, aes(x=cond, y=vas_int, fill=cond)) + 
+     geom_boxplot()+scale_fill_brewer(palette = "Pastel2") +
+     labs(title = "Intensity of Emotion in Fibromyalgia", x = "Condition", y = "VAS points") +
+     theme(plot.title = element_text(hjust = 0.5, size = 20), legend.text=element_text(size=15), axis.text=element_text(size=11),axis.title=element_text(size=13)) 
+   
+#hc intensity
+vas_61_hc$cond <- factor(vas_61_hc$cond, levels = c("Attend neutral",    "Attend positive", "Increase positive", "Suppress positive","Attend negative",   "Reduce negative","Suppress negative"))
+
+ggplot(vas_61_hc, aes(x=cond, y=vas_int, fill=cond)) + 
+     geom_boxplot()+scale_fill_brewer(palette = "Pastel2") +
+     labs(title = "Intensity of Emotion in Controls", x = "Condition", y = "VAS points") +
+     theme(plot.title = element_text(hjust = 0.5, size = 20), legend.text=element_text(size=15), axis.text=element_text(size=11),axis.title=element_text(size=13)) 
+   
+
+#fm arousal
+ggplot(vas_61_fm, aes(x=cond, y=vas_ar, fill=cond)) + 
+     geom_boxplot()+scale_fill_brewer(palette = "Pastel2") +
+     labs(title = "Emotional Arousal in Fibromyalgia", x = "Condition", y = "VAS points") +
+     theme(plot.title = element_text(hjust = 0.5, size = 20), legend.text=element_text(size=15), axis.text=element_text(size=11),axis.title=element_text(size=13)) 
+
+#hc arousal
+ggplot(vas_61_hc, aes(x=cond, y=vas_ar, fill=cond)) + 
+     geom_boxplot()+scale_fill_brewer(palette = "Pastel2") +
+     labs(title = "Emotional Arousal in Controls", x = "Condition", y = "VAS points") +
+     theme(plot.title = element_text(hjust = 0.5, size = 20), legend.text=element_text(size=15), axis.text=element_text(size=11),axis.title=element_text(size=13)) 
+
+#fm pain
+ggplot(vas_61_fm, aes(x=cond, y=vas_pain, fill=cond)) + 
+     geom_boxplot()+scale_fill_brewer(palette = "Pastel2") +
+     labs(title = "Pain intensity in Fibromyalgia", x = "Condition", y = "VAS points") +
+     theme(plot.title = element_text(hjust = 0.5, size = 20), legend.text=element_text(size=15), axis.text=element_text(size=11),axis.title=element_text(size=13)) 
+
+vas_61$gp <- factor(vas_61$gp, levels = c("Fibromyalgia", "Control"))
+
+
+#Intergroup
+vas_61$cond <- factor(vas_61$cond, levels = c("Attend neutral",    "Attend positive", "Increase positive", "Suppress positive","Attend negative",   "Reduce negative","Suppress negative"))
+
+#intensity
+ggplot(vas_61, aes(x=cond, y=vas_int, fill=gp)) + 
+     geom_boxplot(outlier.shape = NA)+scale_fill_manual(values = c("#993333","#FFCCCC")) +
+     labs(title = "Intensity of Emotion", x = "Condition", y = "VAS points") +
+     theme(plot.title = element_text(hjust = 0.5, size = 20), legend.text=element_text(size=15), axis.text=element_text(size=11),axis.title=element_text(size=13))
+
+#arousal
+ggplot(vas_61, aes(x=cond, y=vas_ar, fill=gp)) + 
+     geom_boxplot(outlier.shape = NA)+scale_fill_manual(values = c("#993333","#FFCCCC")) +
+     labs(title = "Arousal", x = "Condition", y = "VAS points") +
+     theme(plot.title = element_text(hjust = 0.5, size = 20), legend.text=element_text(size=15), axis.text=element_text(size=11),axis.title=element_text(size=13))
+
+#pain
+ggplot(vas_61, aes(x=cond, y=vas_pain, fill=gp)) + 
+     geom_boxplot(outlier.shape = NA)+scale_fill_manual(values = c("#993333","#FFCCCC")) +
+     labs(title = "Pain intensity", x = "Condition", y = "VAS points") +
+     theme(plot.title = element_text(hjust = 0.5, size = 20), legend.text=element_text(size=15), axis.text=element_text(size=11),axis.title=element_text(size=13))
+```
+
+#Control arousal per depression in FM
+```{r}
+arxdep <- droplevels(vas_61_fm[vas_61_fm$cond == "Attend negative" | vas_61_fm$cond == "Reduce negative" | vas_61_fm$cond == "Increase positive" | vas_61_fm$cond == "Suppress negative" | vas_61_fm$cond == "Suppress positive",])
+
+summaryBy(vas_ar ~ rid, data=vas_61_fm, FUN=mean)
+
+arxrid_fm <- summaryBy(vas_ar ~ rid, data=vas_61_fm, FUN=mean)
+arxrid_fm$hamd <- intxhamd_fm$X6_hamd_total
+
+boxplot(arxrid_fm$vas_ar.mean)
+
+# remove OL
+(OL_vas_ar_fm <- boxplot(arxrid_fm$vas_ar.mean, plot = FALSE)$out) # 0.857 3.143
+(which(arxrid_fm$vas_ar.mean <= 3.2)) #index 3 8
+arxrid_fm$rid[c(3, 8)] # rid 8 17
+arxrid_fm.woOL <- arxrid_fm[-c(3, 8),]
+
+scatterplot(arxrid_fm.woOL$vas_ar.mean, arxrid_fm.woOL$hamd)
+cor.test(arxrid_fm.woOL$vas_ar.mean, arxrid_fm.woOL$hamd)
+
+```

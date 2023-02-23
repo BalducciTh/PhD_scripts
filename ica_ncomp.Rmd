@@ -1,0 +1,62 @@
+---
+title: "ICA_NComp"
+author: "TBG"
+date: "30-6-2020"
+output:  html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: false
+        smooth_scroll: true
+    number_sections: true
+---
+
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=100)
+
+
+#packages <- c("lsr","coin","car", "stats")
+#if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+#  install.packages(setdiff(packages, rownames(installed.packages())), repos='http://cran.us.r-project.org')  
+}
+
+
+library(knitr)
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=100), fig.align='center', message=F, warning=T, fig.width=6, fig.height=6, dev='svg',eval=T)
+```
+
+# Importing the data
+
+```{r import}
+ica.NComp <- read.table("F:/bases/ica_roi2.txt", header = TRUE)
+```
+
+# explore:
+```{r explore}
+str(ica.NComp)
+summary(ica.NComp)
+boxplot(ica.NComp$roi_mean) #2 outliers
+plot(ica.NComp$n_comp, ica.NComp$roi_mean)
+```
+
+# outliers:
+```{r outliers}
+roi_mean_OL <- ica.NComp$roi_mean[which(ica.NComp$roi_mean %in% boxplot.stats(ica.NComp$roi_mean)$out)]
+ica.NComp$roi_mean == 4.351535 #value of 1st OL
+ica.NComp$roi_mean == -3.288312 #value of 2nd OL
+
+ica.NComp_OL <- ica.NComp[which(ica.NComp$roi_mean!=4.351535),]
+ica.NComp_OL <- ica.NComp_OL[which(ica.NComp_OL$roi_mean!=-3.288312),]
+dim(ica.NComp_OL)
+plot(ica.NComp_OL$n_comp, ica.NComp_OL$roi_mean)
+
+```
+# visualize:
+```{r visualize}
+plot(ica.NComp$n_comp, ica.NComp$roi_mean, main = "NComp : DFrontal act",
+     xlab="N of components", ylab = "Z values",
+     pch = 19, frame=FALSE)
+abline(lm(y ~ x, data = mtcars), col = "blue")
+```

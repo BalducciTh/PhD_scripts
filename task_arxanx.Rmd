@@ -1,0 +1,204 @@
+---
+title: "Emotion intensity - HAMA"
+author: "Thania Balducci"
+
+html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: false
+        smooth_scroll: true
+    number_sections: true
+---
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=100)
+
+library("car")
+library("rcompanion")
+library("mosaic")
+library("visreg")
+library("multcomp")
+library("pls")
+library("ridge")
+library("glmnet")
+library("ggplot2")
+library("ppcor")
+
+library("knitr")
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=100), fig.align='center', message=F, warning=T, fig.width=6, fig.height=6, dev='svg',eval=T)
+```
+
+# Importing the data
+```{r}
+arxhama <- read.csv("G:/bases/neg_vas_ar.csv")
+
+arxhama[4:5] <- lapply(arxhama[4:5], as.numeric)
+
+arxhama_fm <- droplevels(arxhama[arxhama$gp == 0,])
+arxhama_hc <- droplevels(arxhama[arxhama$gp == 1,])
+
+str(arxhama)
+```
+
+# Exploring all
+```{r}
+#visualization
+boxplot(arxhama$X7_hama_total) #no OL
+boxplot(arxhama$vas_ar) #OL 3
+
+#homoscedasticity
+leveneTest(arxhama$X7_hama_total ~ as.factor(gp), data = arxhama) #not same
+leveneTest(arxhama$vas_ar ~ as.factor(gp), data = arxhama) #same
+
+#Normality
+shapiro.test(arxhama$X7_hama_total) #not normal
+shapiro.test(arxhama$vas_ar) #normal
+
+#transform HAMA
+plotNormalHistogram(arxhama$X7_hama_total)
+arxhama$t_hama_total <- transformTukey(arxhama$X7_hama_total)
+plotNormalHistogram(arxhama$t_hama_total)
+
+#transform HAMD
+plotNormalHistogram(arxhama$X6_hamd_total)
+arxhama$t_hamd_total <- transformTukey(arxhama$X6_hamd_total)
+plotNormalHistogram(arxhama$t_hama_total)
+```
+
+# correlation all (w OL)
+```{r }
+scatterplot(arxhama$X7_hama_total, arxhama$vas_ar)
+cor.test(arxhama$t_hama_total, arxhama$vas_ar, method = "spearman")
+```
+cor 
+0.27
+p-value = 0.03
+
+# remove OL
+```{r }
+(OL_vas_ar <- boxplot(arxhama$vas_ar, plot = FALSE)$out) # 0.89  9.00 8.56
+(which(arxhama$vas_ar <=0.89)) #index 4
+(which(arxhama$vas_ar >=8.56)) #index 40 57
+arxhama$rid[c(4,40,57)] # rid 8 52 73
+
+#HAMA OL: none
+#vas_int outliers: rid 8 52 73 (index 4, 40, 57)
+arxhama.woOL <- arxhama[-c(4, 40, 57),]
+```
+
+# correlation all (wo OL)
+```{r }
+scatterplot(arxhama.woOL$t_hama_total, arxhama.woOL$vas_ar)
+cor.test(arxhama.woOL$t_hama_total, arxhama.woOL$vas_ar, method = "spearman")
+```
+
+# correlation all for depression (wo OL)
+```{r }
+scatterplot(arxhama.woOL$t_hamd_total, arxhama.woOL$vas_ar)
+cor.test(arxhama.woOL$t_hamd_total, arxhama.woOL$vas_ar, method = "spearman")
+```
+
+# Exploring FM depression for depression
+```{r}
+#visualization
+boxplot(arxhama_fm$X6_hamd_total) #no OL
+boxplot(arxhama_fm$vas_ar) #2 OL
+
+#Normality
+shapiro.test(arxhama_fm$X6_hamd_total) #normal
+shapiro.test(arxhama_fm$vas_ar) #not normal
+
+#transform arousal
+plotNormalHistogram(arxhama_fm$vas_ar)
+arxhama_fm$t_vas_ar <- transformTukey(arxhama_fm$vas_ar)
+plotNormalHistogram(arxhama_fm$vas_ar)
+
+#visualization
+boxplot(arxhama_fm$t_vas_ar) #2 OL
+```
+# remove OL
+```{r }
+(OLfm_vas_ar <- boxplot(arxhama_fm$t_vas_ar, plot = FALSE)$out) # 0.79 85.57
+(which(arxhama_fm$t_vas_ar <=0.79)) #index 3
+(which(arxhama_fm$t_vas_ar >=85.57)) #index 25
+arxhama_fm$rid[c(3,25)] # rid 8 52
+
+#HAMA OL: none
+#vas_ar outliers: rid 8 52 (index 3, 25)
+arxhama_fm.woOL <- arxhama_fm[-c(3, 25),]
+```
+
+# correlation fm depression
+```{r }
+scatterplot(arxhama_fm.woOL$X6_hamd_total, arxhama_fm.woOL$t_vas_ar)
+cor.test(arxhama_fm.woOL$X6_hamd_total, arxhama_fm.woOL$t_vas_ar, method = "spearman")
+```
+cor 
+-0.005 
+p-value = 1
+
+# Exploring FM depression for anxiety
+```{r}
+#visualization
+boxplot(arxhama_fm$X7_hama_total) #no OL
+boxplot(arxhama_fm$vas_ar) #2 OL
+
+#Normality
+shapiro.test(arxhama_fm$X7_hama_total) #normal
+shapiro.test(arxhama_fm$vas_ar) #not normal
+
+#Use arxhama_fm$t_vas_ar for arousal column in the arxhama_fm.woOL df
+```
+
+# correlation fm anxiety
+```{r }
+scatterplot(arxhama_fm.woOL$X7_hama_total, arxhama_fm.woOL$t_vas_ar)
+cor.test(arxhama_fm.woOL$X7_hama_total, arxhama_fm.woOL$t_vas_ar, method = "spearman")
+```
+# Exploring HC
+#```{r}
+#visualization
+boxplot(intxhamd_hc$X6_hamd_total) #3 OL
+boxplot(intxhamd_hc$vas_int) #1 OL
+
+(OL_vas_int_hc <- boxplot(intxhamd_hc$X6_hamd_total, plot = FALSE)$out) # 5 7 4 5 5
+(OL_vas_int_hc <- boxplot(intxhamd_hc$vas_int, plot = FALSE)$out) # 10.00
+(which(intxhamd_hc$X6_hamd_total >=4)) #index 5 9 14 22 31
+(which(intxhamd_hc$vas_int >=9.99)) #index 19
+intxhamd$rid[c(5,9,14,22,31)] # rid 10 15 20 29 40
+intxhamd$rid[c(19)] # rid 25
+
+#HAMD OL: rid 10 15 20 29 40 (index 5,9,14,22,31)
+#vas_int outliers: rid 25 (index 19)
+intxhamd_hc.woOL <- intxhamd_hc[-c(5,9,14,19,22,31),]
+```
+
+# correlation hc
+#```{r }
+scatterplot(intxhamd_hc.woOL$X6_hamd_total, intxhamd_hc.woOL$vas_int)
+cor.test(intxhamd_hc.woOL$X6_hamd_total, intxhamd_hc.woOL$vas_int, method = "spearman")
+```
+
+For HC wo
+-0.116
+p-value = 0.5
+
+
+#correlation int and wpi controled by HAMD
+
+#```{r }
+cor.test(intxhamd$vas_int, intxhamd$wpi, method = "spearman")
+pcor.test(intxhamd$vas_int, intxhamd$wpi, intxhamd$X6_hamd_total, method = "spearman")
+```
+
+Corr -0.461 p-value = 2e-04
+
+pcor
+estimate p.value 
+  -0.184    0.16 
+  
+  
+#Control of arousal per depression
+In task_vas_61

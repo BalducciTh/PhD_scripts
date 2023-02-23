@@ -1,0 +1,103 @@
+---
+title: "Correlations gppi"
+author: "Thania Balducci"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: false
+        smooth_scroll: true
+    number_sections: true
+---
+
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=100)
+
+
+packages <- c("lsr","coin","car", "stats")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())), repos='http://cran.us.r-project.org')  
+}
+
+library("car")
+library("Hmisc")
+library("corrplot")
+
+
+library(knitr)
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=100), fig.align='center', message=F, warning=T, fig.width=6, fig.height=6, dev='svg',eval=T)
+```
+
+# Importing the data
+
+```{r import}
+corrgppi_61 <- read.csv2("G:/bases/covgppi.csv")
+```
+
+# explore:
+
+```{r explore}
+
+str(corrgppi_61)
+
+#check for outliers group FM
+boxplot(corrgppi_61$X7_hama_total[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X7_hama_psic[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X7_hama_psic.dep.hama6.[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X11_.id[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X11_df[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X11_eot[corrgppi_61$gp == 0]) #3 OL
+boxplot(corrgppi_61$X11_ts[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X1_vas_pain_iv[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X3_wpi_sc[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X3_sss_tc[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$sd[corrgppi_61$gp == 0]) # 3 OL
+boxplot(corrgppi_61$X6_hamd_total[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X6_hamdpsic[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$X6_hamd_III[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$t_pain_aneu1[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$t_pain_apos_mean[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$t_pain_aneg_mean[corrgppi_61$gp == 0])
+boxplot(corrgppi_61$t_dif_apos.aneg_mean_[corrgppi_61$gp == 0]) # 3OL
+```
+
+#remove outliers
+```{r}
+#tas_eot
+(OL_tas_eot_61_fm <- boxplot(corrgppi_61$X11_eot[corrgppi_61$gp == 0], plot = FALSE)$out) #38 39 37
+(which(corrgppi_61$X11_eot[corrgppi_61$gp == 0] == 38)) #index 2, rid 6
+(which(corrgppi_61$X11_eot[corrgppi_61$gp == 0] == 39)) #index 4, rid 10
+(which(corrgppi_61$X11_eot[corrgppi_61$gp == 0] == 37)) #index 8, rid 17
+
+#taskpain_sd
+(OL_pain_sd_61_fm <- boxplot(corrgppi_61$sd[corrgppi_61$gp == 0], plot = FALSE)$out) #3.035504 3.360130
+(which(corrgppi_61$sd[corrgppi_61$gp == 0] >= 3.035504)) #index 2 & 4; rid 6 & 10
+
+#mean diff apos-aneg
+(OL_pain_diff_61_fm <- boxplot(corrgppi_61$t_dif_apos.aneg_mean_[corrgppi_61$gp == 0], plot = FALSE)$out) #8 7 3.33
+(which(corrgppi_61$t_dif_apos.aneg_mean_[corrgppi_61$gp == 0] >= 3.33)) #index 2, 4 & 28; rid 6, 10 & 55
+```
+
+#Replace with NA
+
+```{r}
+CL_corrgppi_61 <- corrgppi_61
+CL_corrgppi_61$X11_eot[CL_corrgppi_61$X11_eot %in% OL_tas_eot_61_fm] <- NA
+CL_corrgppi_61$sd[CL_corrgppi_61$sd %in% OL_pain_sd_61_fm] <- NA
+CL_corrgppi_61$t_dif_apos.aneg_mean_[CL_corrgppi_61$t_dif_apos.aneg_mean_ %in% OL_pain_diff_61_fm] <- NA
+```
+
+# Correlations  FM
+```{r}
+CL_corrgppi_61_fm <- droplevels(CL_corrgppi_61[CL_corrgppi_61$gp == 0,])
+CL_corrgppi_61_fm <- CL_corrgppi_61_fm[ -c(1,2)]
+
+mtx_corrgppi_fm <- cor(CL_corrgppi_61_fm, use = "complete.obs")
+round(mtx_corrgppi_fm,2)
+cp_gppi_fm <- rcorr(as.matrix(mtx_corrgppi_fm), type = "pearson")
+corrplot.mixed(mtx_corrgppi_fm, upper = "color", lower = "number", is.corr = F, p.mat = cp_gppi_fm$P, insig = "blank", number.cex=0.6, tl.cex=0.6, order = "FPC",mar = c(4, 4, 4, 4))
+```
+

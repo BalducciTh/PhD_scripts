@@ -1,0 +1,114 @@
+---
+title: "ClinCorr_61"
+author: "Thania Balducci"
+date: "14/01/2021"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: true
+        smooth_scroll: true
+    number_sections: true
+---
+
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=100)
+
+
+packages <- c("lsr","coin","car", "stats")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())), repos='http://cran.us.r-project.org')  
+}
+
+library("car")
+library("Hmisc")
+library("corrplot")
+
+library(knitr)
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=100), fig.align='center', message=F, warning=T, fig.width=6, fig.height=6, dev='svg',eval=T)
+```
+
+# Importing the data
+
+```{r import}
+corr_61 <- read.csv("F:/bases/clinic_corr_61.csv")
+
+corr_61_fm <- droplevels(corr_61[corr_61$gp == 0,])
+corr_61_hc <- droplevels(corr_61[corr_61$gp == 1,])
+```
+
+# Subsetting
+
+```{r import}
+#All
+corrm_61 <- subset(corr_61, select = c("X1_vas_pain_iv", "X3_wpi_sc", "X3_sss_tc", "X3_sss2_score", "X3_sss_ts", "X4_tc", "X6_hamd_total", "X6_hamdpsic", "X6_hamd_III", "X7_hama_total", "X7_hama_psic", "X9_PD_PC", "X9_ID_PC", "X9_RT_PC", "X9_POR_PC", "X9_MV_PC", "X9_A_PC", "X9_HOR_PC", "X9_ORA_PC", "X9_ORD_PC", "X9_ORH_PC", "X9_ORI_PC", "X9_ORN_PC", "X9_ORO_PC", "X9_ORP_PC", "X9_ORS_PC", "X10_R", "X10_S", "X11_.id", "X11_df", "X11_eot", "X11_ts", "X13_p_lw", "X13_n_lw", "X13_p_g", "X13_n_g", "X15_1", "X14_a", "X15_2", "X15_dif", "X15_4", "X15_5", "X15_6", "t_pain_aneu1", "t_pain_apos_mean", "t_pain_aneg_mean", "t_dif_apos.aneg_mean_", "painvar_std"))
+
+#FM
+corrm_61_fm <- subset(corr_61, select = c("X1_fm_dx_t", "X1_fm_sx_t","X1_vas_pain_iv","X3_wpi_sc","X3_sss_tc","X3_sss2_score","X3_sss_ts","X4_tc","X6_hamd_total", "X6_hamdpsic","X6_hamd_III","X7_hama_total","X7_hama_psic","X9_PD_PC","X9_ID_PC","X9_RT_PC","X9_POR_PC","X9_MV_PC", "X9_A_PC", "X9_HOR_PC","X9_ORA_PC","X9_ORD_PC","X9_ORH_PC","X9_ORI_PC","X9_ORN_PC","X9_ORO_PC", "X9_ORP_PC", "X9_ORS_PC", "X10_R", "X10_S", "X11_.id", "X11_df", "X11_eot","X11_ts","X12_ts","X13_p_lw","X13_n_lw","X13_p_g","X13_n_g","X14_s","X14_a","X14_e","X14_ts","X15_1","X15_2","X15_dif","X15_4","X15_5","X15_6", "t_pain_aneu1","t_pain_apos_mean","t_pain_aneg_mean","t_dif_apos.aneg_mean_", "painvar_std" ))
+  
+#HC
+corrm_61_hc <- subset(corr_61, select = c("X1_vas_pain_iv", "X3_wpi_sc", "X3_sss_tc", "X3_sss2_score", "X3_sss_ts", "X4_tc", "X6_hamd_total", "X6_hamdpsic", "X6_hamd_III", "X7_hama_total", "X7_hama_psic", "X9_PD_PC", "X9_ID_PC", "X9_RT_PC", "X9_POR_PC", "X9_MV_PC", "X9_A_PC", "X9_HOR_PC", "X9_ORA_PC", "X9_ORD_PC", "X9_ORH_PC", "X9_ORI_PC", "X9_ORN_PC", "X9_ORO_PC", "X9_ORP_PC", "X9_ORS_PC", "X10_R", "X10_S", "X11_.id", "X11_df", "X11_eot", "X11_ts", "X13_p_lw", "X13_n_lw", "X13_p_g", "X13_n_g", "X15_1", "X14_a", "X15_2", "X15_dif", "X15_4", "X15_5", "X15_6", "t_pain_aneu1", "t_pain_apos_mean", "t_pain_aneg_mean", "t_dif_apos.aneg_mean_", "painvar_std"))
+```
+
+# Correlations  all
+```{r}
+
+#All
+mtx_all <- cor(corrm_61, use = "complete.obs")
+round(mtx_all,2)
+ 
+p_all <- rcorr(as.matrix(mtx_all), type = "pearson") #p-value $r $P
+
+corrplot.mixed(mtx_all, upper = "color", lower = "number", is.corr = F, p.mat = p_all$P, insig = "blank", number.cex=0.45, tl.cex=0.7, order = "FPC") #plot
+```
+
+# Correlations  FM
+```{r}
+#FM
+mtx_fm <- cor(corrm_61, use = "complete.obs")
+round(mtx_fm,2)
+ 
+p_fm <- rcorr(as.matrix(mtx_fm), type = "pearson") #p-value $r $P
+
+corrplot.mixed(mtx_fm, upper = "color", lower = "number", is.corr = F, p.mat = p_fm$P, insig = "blank", number.cex=0.45, tl.cex=0.7, order = "FPC") #plot
+```
+
+# Correlations clean all
+```{r}
+
+#All
+ccorrm_61 <- subset(corr_61, select = c("X6_hamd_III", "X9_ID_PC", "X11_.id", "X13_n_lw", "X11_ts","X3_wpi_sc","X14_a","X3_sss_ts", "X10_R", "X10_S","X15_1", "painvar_std", "X13_p_lw"))
+
+mtx_allc <- cor(ccorrm_61, use = "complete.obs")
+round(mtx_allc,2)
+ 
+p_allc <- rcorr(as.matrix(mtx_allc), type = "pearson") #p-value $r $P
+
+corrplot.mixed(mtx_allc, upper = "color", lower = "number", is.corr = F, p.mat = p_all$P, insig = "blank", number.cex=0.45, tl.cex=0.7, order = "FPC") #plot
+```
+
+# Correlations FM
+```{r}
+mtx_fm <- cor(corrm_61_fm, use = "complete.obs")
+round(mtx_fm,2)
+ 
+p_fm <- rcorr(as.matrix(mtx_fm), type = "pearson") #p-value $r $P
+
+corrplot.mixed(mtx_fm, upper = "color", lower = "number", is.corr = F, p.mat = p_fm$P, insig = "blank", number.cex=0.45, tl.cex=0.7, order = "FPC") #plot
+```
+
+# Correlations clean FM
+```{r}
+#clean FM
+ccorrm_61_fm <- subset(corr_61, select = c("X6_hamd_III", "X9_ID_PC", "X13_n_lw", "X11_ts","X3_wpi_sc","X14_a","X3_sss_ts", "X10_R", "X10_S","X15_1", "painvar_std", "X13_p_lw",  "X1_fm_sx_t"))
+
+mtxc_fm <- cor(ccorrm_61_fm, use = "complete.obs")
+round(mtxc_fm,2)
+ 
+cp_fm <- rcorr(as.matrix(mtxc_fm), type = "pearson") #p-value $r $P
+
+corrplot.mixed(mtxc_fm, upper = "color", lower = "number", is.corr = F, p.mat = cp_fm$P, insig = "blank", number.cex=0.6, tl.cex=0.6, order = "FPC",mar = c(4, 4, 4, 4)) #plot
+```

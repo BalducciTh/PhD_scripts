@@ -1,0 +1,195 @@
+---
+title: "RS Dual regression - clinical correlations "
+author: "Thania Balducci"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: false
+        smooth_scroll: true
+    number_sections: true
+---
+
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=100)
+
+library("car")
+library("ggplot2")
+library("lsr")
+
+library("knitr")
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=100), fig.align='center', message=F, warning=T, fig.width=6, fig.height=6, dev='svg',eval=T)
+```
+
+# Importing the data
+
+```{r import}
+DRC <- read.csv("G:/bases/RS/RS_clincorr.csv")
+
+DRC_fm <- droplevels(DRC[DRC$gp == 0,])
+DRC_hc <- droplevels(DRC[DRC$gp == 1,])
+
+str(DRC)
+```
+
+#Explore pain
+```{r}
+
+#Explore
+(mean(DRC_fm$X1_vas_pain_iv, na.rm = TRUE))
+(mean(DRC_hc$X1_vas_pain_iv, na.rm = TRUE))
+
+(sd(DRC_fm$X1_vas_pain_iv, na.rm = TRUE))
+(sd(DRC_hc$X1_vas_pain_iv, na.rm = TRUE))
+
+
+#visualize
+par(mfrow = c(1, 2))
+hist(DRC_fm$X1_vas_pain_iv, main = "pain IV", sub = "Fibromyalgia", xlim = c(0, 100), ylim = c(0, 33), breaks = (8))
+hist(DRC_hc$X1_vas_pain_iv, main = "pain IV", sub = "Controls", xlim = c(0, 100), ylim = c(0, 33), breaks = (2))
+
+par(mfrow = c(1, 1))
+boxplot(X1_vas_pain_iv ~ gp, data = DRC, main = "Pain IV")
+
+#Parametric assumptions
+
+#homoscedasticity -- Not
+leveneTest(X1_vas_pain_iv ~ as.factor(gp), data = DRC)
+
+#normality - Not
+qqnorm(DRC_fm$X1_vas_pain_iv)
+qqline(DRC_fm$X1_vas_pain_iv)
+qqnorm(DRC_hc$X1_vas_pain_iv)
+qqline(DRC_hc$X1_vas_pain_iv)
+
+shapiro.test(DRC_fm$X1_vas_pain_iv)
+shapiro.test(DRC_hc$X1_vas_pain_iv)
+
+#Non-parametric
+
+wilcox.effsize <- function(pval2tailed, N) {
+(r <- abs(qnorm(pval2tailed/2)/sqrt(N))) # r = z / sqrt(N)
+}
+
+(RS_pain.w <-wilcox.test(X1_vas_pain_iv ~ gp, data = DRC, correct = FALSE, conf.int = TRUE))
+(wilcox.effsize(RS_pain.w$p.value, nrow(DRC)))
+
+```
+
+
+#Explore C1
+```{r}
+
+#Explore
+(mean(DRC_fm$C1, na.rm = TRUE))
+(mean(DRC_hc$C1, na.rm = TRUE))
+
+(sd(DRC_fm$C1, na.rm = TRUE))
+(sd(DRC_hc$C1, na.rm = TRUE))
+
+
+#visualize
+par(mfrow = c(1, 2))
+hist(DRC_fm$C1, main = "C1", sub = "Fibromyalgia", xlim = c(-3, 3), ylim = c(0, 25), breaks = (4))
+hist(DRC_hc$C1, main = "C1", sub = "Controls", xlim = c(-3, 3), ylim = c(0, 25), breaks = (4))
+
+par(mfrow = c(1, 1))
+boxplot(C1 ~ gp, data = DRC, main = "C1") #OL
+
+#Parametric assumptions
+
+#homoscedasticity -- yes
+leveneTest(C1 ~ as.factor(gp), data = DRC)
+
+#normality - Not
+qqnorm(DRC_fm$C1)
+qqline(DRC_fm$C1)
+qqnorm(DRC_hc$C1)
+qqline(DRC_hc$C1)
+
+shapiro.test(DRC_fm$C1)
+shapiro.test(DRC_hc$C1)
+
+#Non-parametric - no different between groups
+
+(RS_C1.w <-wilcox.test(C1 ~ gp, data = DRC, correct = FALSE, conf.int = TRUE))
+(wilcox.effsize(RS_pain.w$p.value, nrow(DRC)))
+
+```
+
+#Explore C2
+```{r}
+
+#Explore
+(mean(DRC_fm$C2, na.rm = TRUE))
+(mean(DRC_hc$C2, na.rm = TRUE))
+
+(sd(DRC_fm$C2, na.rm = TRUE))
+(sd(DRC_hc$C2, na.rm = TRUE))
+
+
+#visualize
+par(mfrow = c(1, 2))
+hist(DRC_fm$C2, main = "C2", sub = "Fibromyalgia", xlim = c(-3, 3), ylim = c(0, 20), breaks = (4))
+hist(DRC_hc$C2, main = "C2", sub = "Controls", xlim = c(-3, 3), ylim = c(0, 20), breaks = (4))
+
+par(mfrow = c(1, 1))  #no OL
+boxplot(C2 ~ gp, data = DRC, main = "C2")
+
+#Parametric assumptions
+
+#homoscedasticity -- yes
+leveneTest(C2 ~ as.factor(gp), data = DRC)
+
+#normality - yes
+qqnorm(DRC_fm$C2)
+qqline(DRC_fm$C2)
+qqnorm(DRC_hc$C2)
+qqline(DRC_hc$C2)
+
+shapiro.test(DRC_fm$C2)
+shapiro.test(DRC_hc$C2)
+
+#parametric - no different between groups
+
+(C2.tt <-t.test(DRC$C2 ~ DRC$gp))
+(cohensD(DRC$C2 ~ DRC$gp))
+
+```
+
+#Explore C3
+```{r}
+
+#Explore
+(mean(DRC_fm$C3, na.rm = TRUE))
+(mean(DRC_hc$C3, na.rm = TRUE))
+
+(sd(DRC_fm$C3, na.rm = TRUE))
+(sd(DRC_hc$C3, na.rm = TRUE))
+
+
+#visualize
+par(mfrow = c(1, 1))  #no OL
+boxplot(C3 ~ gp, data = DRC, main = "C3")
+
+#Parametric assumptions
+
+#homoscedasticity -- yes
+leveneTest(C3 ~ as.factor(gp), data = DRC)
+
+#normality - no
+qqnorm(DRC_fm$C3)
+qqline(DRC_fm$C3)
+qqnorm(DRC_hc$C3)
+qqline(DRC_hc$C3)
+
+shapiro.test(DRC_fm$C3)
+shapiro.test(DRC_hc$C3)
+
+#non parametric - no different between groups
+(RS_C3.w <-wilcox.test(C3 ~ gp, data = DRC, correct = FALSE, conf.int = TRUE))
+(wilcox.effsize(RS_C3.w$p.value, nrow(DRC)))
+```

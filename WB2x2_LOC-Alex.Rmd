@@ -1,0 +1,175 @@
+---
+title: "WB2x2 LOC-Alex"
+author: "TBG"
+date: "15/7/2021"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: false
+        smooth_scroll: true
+    number_sections: true
+---
+
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=100)
+
+
+packages <- c("lsr","coin","car", "stats")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())), repos='http://cran.us.r-project.org')  
+}
+
+library("car")
+library("ggplot2")
+library("ppcor")
+library('Cairo')
+
+library("knitr")
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=100), fig.align='center', message=F, warning=T, fig.width=6, fig.height=6, dev='svg',eval=T)
+```
+
+Working with cluster peak (different between groups)
+
+# Importe data
+```{r import}
+LOC_Al <- read.csv("G:/bases/WB2x2LOC.csv")
+
+LOC_Al_fm <- droplevels(LOC_Al[painxhamd$gp == 0,])
+LOC_Al_hc <- droplevels(LOC_Al[painxhamd$gp == 1,])
+
+str(LOC_Al)
+```
+
+# explore all
+```{r explore}
+
+#check for outliers for all sample
+boxplot(LOC_Al$LOC_mean) #1 OL
+boxplot(LOC_Al$X11_ts) # 4 OL
+boxplot(LOC_Al$X11_eot) # 3 OL
+```
+
+#remove outliers all
+```{r}
+#LOC_mean
+(OL_LOC_m <- boxplot(LOC_Al$LOC_mean, plot = FALSE)$out) # 7.97
+(which(LOC_Al$LOC_mean >=7.9)) #index 3
+LOC_Al$rid[c(3)] # rid 8
+
+#AL_ts
+(OL_AL_ts <- boxplot(LOC_Al$X11_ts, plot = FALSE)$out) #  94  93  98 107
+(which(LOC_Al$X11_ts >=92)) #index 1 2 4 8
+LOC_Al$rid[c(1, 2, 4, 8)] # rid 2  6 10 17
+
+#AL_eot
+(OL_AL_eot <- boxplot(LOC_Al$X11_eot, plot = FALSE)$out) #  38 39 37
+(which(LOC_Al$X11_eot >=36)) #index 2 4 8
+LOC_Al$rid[c(2, 4, 8)] # rid 6 10 17
+
+##subset for corr
+#LOC_m outliers: rid 8 (index 3)
+#AL_ts: rid 2  6 10 17 (index 1, 2, 4, 8)
+#Al_eot: rid 6 10 17 (index 2, 4, 8)
+LOC_Al.woOL <- LOC_Al[-c(1, 2, 3, 4, 8),]
+```
+
+#correlation all woOL
+```{r}
+#ts
+scatterplot(LOC_Al.woOL$X11_ts, LOC_Al.woOL$LOC_mean)
+cor.test(LOC_Al.woOL$X11_ts, LOC_Al.woOL$LOC_mean)
+
+#eot
+scatterplot(LOC_Al.woOL$X11_eot, LOC_Al.woOL$LOC_mean)
+cor.test(LOC_Al.woOL$X11_eot, LOC_Al.woOL$LOC_mean)
+
+##
+ggplotRegression <- function (fit,colord) {
+
+require(ggplot2)
+
+ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1], color=colord)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "red") +
+  labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                     "Intercept =",signif(fit$coef[[1]],5 ),
+                     " Slope =",signif(fit$coef[[2]], 5),
+                     " P =",signif(summary(fit)$coef[2,4], 5)))
+}
+
+##
+
+fitplot.LOC_Al.all <- lm(formula =  LOC_mean ~ X11_ts, data = LOC_Al.woOL)
+ggplotRegression(fitplot.LOC_Al.all, LOC_Al.woOL$gp)
+```
+
+# explore fm
+```{r explore}
+
+#check for outliers for all sample
+boxplot(LOC_Al_fm$LOC_mean) #0 OL
+boxplot(LOC_Al_fm$X11_ts) # 3 OL
+boxplot(LOC_Al_fm$X11_eot) # 3 OL
+boxplot(LOC_Al_fm$X11_.id) #0 OL
+boxplot(LOC_Al_fm$X11_df) #0 OL
+```
+
+#remove outliers fm
+```{r}
+#AL_ts
+(OL_AL_ts_fm <- boxplot(LOC_Al_fm$X11_ts, plot = FALSE)$out) #  94  93  98 
+(which(LOC_Al_fm$X11_ts >=92)) #index 1 2 3
+LOC_Al_fm$rid[c(1, 2, 3)] # rid 2  6 10 
+
+#AL_eot
+(OL_AL_eot_fm <- boxplot(LOC_Al_fm$X11_eot, plot = FALSE)$out) #  35 38 39
+(which(LOC_Al_fm$X11_eot >=34)) #index 1 2 3 
+LOC_Al_fm$rid[c(1, 2, 3)] # rid 2  6 10
+
+##subset for corr
+#LOC_m outliers: none
+#AL_ts: rid 2  6 10 (index 1, 2, 3)
+#Al_eot: rid 2  6 10 (index 1, 2, 3)
+LOC_Al_fm.woOL <- LOC_Al_fm[-c(1, 2, 3),]
+```
+
+#correlation fm
+```{r}
+#ts
+scatterplot(LOC_Al_fm.woOL$X11_ts, LOC_Al_fm.woOL$LOC_mean)
+cor.test(LOC_Al_fm.woOL$X11_ts, LOC_Al_fm.woOL$LOC_mean)
+
+#eot
+scatterplot(LOC_Al_fm.woOL$X11_eot, LOC_Al_fm.woOL$LOC_mean)
+cor.test(LOC_Al_fm.woOL$X11_eot, LOC_Al_fm.woOL$LOC_mean)
+
+
+#id
+scatterplot(LOC_Al_fm$X11_.id, LOC_Al_fm$LOC_mean) # no lineal
+cor.test(LOC_Al_fm$X11_.id, LOC_Al_fm$LOC_mean)
+
+#df
+scatterplot(LOC_Al_fm$X11_df, LOC_Al_fm$LOC_mean) # no lineal
+cor.test(LOC_Al_fm$X11_df, LOC_Al_fm$LOC_mean)
+
+#hamd
+scatterplot(LOC_Al_fm.woOL$X6_hamd_total, LOC_Al_fm.woOL$LOC_mean)
+cor.test(LOC_Al_fm.woOL$X6_hamd_total, LOC_Al_fm.woOL$LOC_mean)
+
+#hamd all
+scatterplot(LOC_Al.woOL$X6_hamd_total, LOC_Al.woOL$LOC_mean)
+cor.test(LOC_Al.woOL$X6_hamd_total, LOC_Al.woOL$LOC_mean)
+
+
+#Scatter plot for LOC-HAMD in FM
+CairoWin()
+plot <- ggplot(LOC_Al_fm.woOL, aes(x=LOC_mean, y=X6_hamd_total)) + geom_point() + geom_smooth(method=lm, se=TRUE, color="darkred") + geom_point(color="darkred") + theme(panel.background = element_rect(fill = "snow1", colour = "snow1", size = 0.5, linetype = "solid"), panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "white"), panel.grid.minor = element_line(size = 0.25, linetype = 'solid',colour = "white"))
+
+plot <- plot + labs(x = "Cluster activation", y = "Depression/Anxiety") + theme(axis.text = element_text(size = 16), axis.title = element_text(size = 20)) 
+
+ggsave(plot, filename = "LOC-HAMDcorrFM.png", dpi = 300, type = "cairo", width = 8, height = 4, units = "in")
+```
