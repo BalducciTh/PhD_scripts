@@ -1,0 +1,96 @@
+---
+title: "MA-depresive_disorder"
+author: "TBG"
+date: "08-10-2020"
+output: 
+  html_document:
+    toc: true
+    code_folding: show
+    toc_float: 
+        collapsed: true
+        smooth_scroll: true
+    number_sections: true
+---
+
+```{r setup, message=F, echo=F}
+# some custom options to generate a nice html file
+options(digits = 3)
+options(width=1000)
+
+
+packages <- c("lsr")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())), repos='http://cran.us.r-project.org')  
+}
+
+library("metafor")
+
+library(knitr)
+opts_chunk$set(cache=F, comment='#', tidy = T, tidy.opts=list(blank=T, width.cutoff=700), fig.align='center', message=F, warning=T, fig.width=25, fig.height=12, dev='svg',eval=T)
+```
+
+#depdis1 
+depressive disorder all
+
+High heterogeneity
+
+```{r}
+depdis_df <- read.csv("G:/Documents/Mine/Doctorado Ciencias/MA1/analisis/Depressive_disorder_R.csv")
+str(depdis_df)
+
+depdis_df$names <- paste0(depdis_df$author,", ", depdis_df$year)
+
+depdis_df$css <- factor(depdis_df$css, levels = c(1,2,3,4,5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24), labels = c("Fibromyalgia", "Irritable bowel syndrome", "Functional dyspepsia", "Tension-type headache", "Migraine", "Myofascial pain syndrome", "Myofascial temporomandibular disorder", "Primary chronic neck pain", "Primary low back pain", "Restless legs syndrome", "Periodic limb movement disorder", "Primary dysmenorrhea", "Painful bladder syndrome", "Insterstitial cystitis", "Vulvodynia", "Vulvar vestibulitis", "Chronic prostatitis", "Multiple chemical sensitivity", "Chronic pelvic pain syndrome", "Painful bladder syndrome/insterstitial cystitis", "Irritable bowel syndrome / functional dyspepsia",  "Chronic prostatitis / chronic pelvic pain syndrome", "Tension-type headache /migraine", "Insterstitial Cystitis /chronic prostatitis"))
+
+str(depdis_df)
+
+depdis1_df <- depdis_df[c("ï..id_r","id", "author", "css", "css_N", "css_n", "css_prev", "set", "bias_ci", "bias_p", "bias_both", "names")] #without controls
+depdis1.transf <- escalc(measure="PAS",xi=css_n,ni=css_N,data=depdis1_df, add=0)
+depdis1.ma <- rma(yi,vi,data = depdis1.transf, method="PM",weighted=TRUE)
+pes_depdis1 <- predict(depdis1.ma, transf=transf.iarcsin) 
+print(pes_depdis1,digits=4)
+depdis1.ma
+
+forest(depdis1.ma, addcred = TRUE, header = TRUE, transf = "iarcsine", slab = depdis_df$names, ilab = depdis1_df$css, ilab.xpos = c(-0.25), cex=.8)
+#cex=font size
+
+funnel(depdis1.ma)
+```
+
+#depdis2
+depressive disorder set 4: third level
+
+High heterogeneity
+```{r}
+depdis2.ma <- rma(yi,vi,data = anxsymp1.transf, method="PM",weighted=TRUE, subset = set == 4)
+pes_depdis2 <- predict(depdis2.ma, transf=transf.iarcsin) 
+print(pes_depdis2,digits=4)
+depdis2.ma
+forest(depdis2.ma, addcred = TRUE, header = TRUE, transf = "iarcsine", showweights = TRUE, ilab = depdis1_df$css, ilab.xpos = c(-0.5))
+```
+
+#depdis3
+depressive disorder only high power and third level
+High heterogeneity 
+
+
+```{r}
+depdis3.ma <- rma(yi,vi,data = anxdis1.transf, method="PM",weighted=TRUE, subset = bias_both == 1 & set == 4)
+pes_depdis3 <- predict(depdis3.ma, transf=transf.iarcsin) 
+print(pes_depdis3,digits=4)
+anxsymp3.ma
+forest(depdis3.ma, addcred = TRUE, header = TRUE, transf = "iarcsine", showweights = TRUE, ilab = depdis1_df$css, ilab.xpos = c(-0.5))
+```
+
+#depdis4
+depressive disorder set 1: community
+
+High heterogeneity
+```{r}
+depdis4.ma <- rma(yi,vi,data = anxsymp1.transf, method="PM",weighted=TRUE, subset = set == 11 | set == 12 | set == 13 | set == 14 | set == 1)
+pes_depdis4 <- predict(depdis4.ma, transf=transf.iarcsin) 
+print(pes_depdis4,digits=4)
+depdis4.ma
+forest(depdis4.ma, addcred = TRUE, header = TRUE, transf = "iarcsine", showweights = TRUE, ilab = depdis1_df$css, ilab.xpos = c(-0.5))
+funnel(depdis4.ma)
+```
